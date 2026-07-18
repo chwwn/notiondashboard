@@ -102,7 +102,7 @@
   const DATE_COLS = ["기록일자"];
   const CATEGORY_COLS = ["비워두기"];
   const TITLE_COL = "비워두기";
-  const GENERATED_AT = "2026-07-18T07:27:13.110Z";
+  const GENERATED_AT = "2026-07-18T07:31:27.564Z";
 
   document.getElementById("updatedAt").textContent =
     new Date(GENERATED_AT).toLocaleString("ko-KR");
@@ -153,6 +153,34 @@
   const REACTION_COL = findColByKeyword("반응");
   const PROFILE_COL = findColByKeyword("프로필");
 
+  // 항목 이름으로 보여줄 컬럼을 찾습니다.
+  // 1순위: 노션 기본 제목(title) 속성에 값이 채워져 있으면 그걸 사용
+  // 2순위: 컬럼 이름에 "제목"/"콘텐츠"/"이름"이 포함된 텍스트 속성 중 값이 채워진 것
+  function pickLabelColumn() {
+    if (DATA.length === 0) return null;
+
+    const isFilled = (col) => {
+      const filledCount = DATA.filter(
+        (r) => r[col] !== null && r[col] !== undefined && r[col].toString().trim() !== ""
+      ).length;
+      return filledCount / DATA.length > 0.5;
+    };
+
+    if (TITLE_COL && isFilled(TITLE_COL)) return TITLE_COL;
+
+    const keywords = ["제목", "콘텐츠", "이름"];
+    for (const kw of keywords) {
+      const candidate = Object.keys(DATA[0])
+        .filter((k) => k !== "id" && k !== TITLE_COL && k.includes(kw))
+        .find((k) => isFilled(k));
+      if (candidate) return candidate;
+    }
+
+    return TITLE_COL || null;
+  }
+
+  const LABEL_COL = pickLabelColumn();
+
   // 조회수 / 반응 / 프로필 활동 TOP 5 가로 막대 차트
   function renderTop5(chartTitle, valueCol) {
     const box = makeChartBox(chartTitle);
@@ -171,7 +199,7 @@
       .slice(0, 5);
 
     const labels = sorted.map((r) => {
-      const t = TITLE_COL ? r[TITLE_COL] : "";
+      const t = LABEL_COL ? r[LABEL_COL] : "";
       const text = (t || "(제목 없음)").toString();
       return text.length > 18 ? text.slice(0, 18) + "…" : text;
     });
