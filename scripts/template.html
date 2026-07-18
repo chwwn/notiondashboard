@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>별별별 콘텐츠 인사이트 대시보드</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", sans-serif;
+    background: #FFEBF7;
+    color: #1f1f1f;
+    padding: 24px;
+  }
+  h1 {
+    font-size: 20px;
+    margin: 0 0 4px 0;
+  }
+  .updated {
+    font-size: 12px;
+    color: #8a8a8a;
+    margin-bottom: 20px;
+  }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    border: 1px solid #ececec;
+    border-radius: 10px;
+    padding: 14px 16px;
+    background: #FFFACC;
+  }
+  .stat-card .label {
+    font-size: 12px;
+    color: #8a8a8a;
+    margin-bottom: 6px;
+  }
+  .stat-card .value {
+    font-size: 22px;
+    font-weight: 600;
+  }
+  .charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+  .chart-box {
+    border: 1px solid #ececec;
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .chart-box h3 {
+    font-size: 14px;
+    margin: 0 0 12px 0;
+    color: #444;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13px;
+  }
+  th, td {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 8px 10px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  th {
+    color: #8a8a8a;
+    font-weight: 500;
+  }
+  .table-wrap {
+    max-height: 360px;
+    overflow: auto;
+    border: 1px solid #ececec;
+    border-radius: 10px;
+  }
+  .empty {
+    color: #8a8a8a;
+    font-size: 13px;
+    padding: 20px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+  <h1>별별별 콘텐츠 인사이트 대시보드</h1>
+  <div class="updated">마지막 업데이트: <span id="updatedAt"></span></div>
+
+  <div class="stats" id="stats"></div>
+  <div class="charts" id="charts"></div>
+
+<script>
+  const DATA = __DATA__;
+  const NUMBER_COLS = __NUMBER_COLS__;
+  const DATE_COLS = __DATE_COLS__;
+  const CATEGORY_COLS = __CATEGORY_COLS__;
+  const TITLE_COL = __TITLE_COL__;
+  const GENERATED_AT = "__GENERATED_AT__";
+
+  document.getElementById("updatedAt").textContent =
+    new Date(GENERATED_AT).toLocaleString("ko-KR");
+
+  if (window.ChartDataLabels) {
+    Chart.register(ChartDataLabels);
+  }
+
+  // ---- 요약 카드 ----
+  const statsEl = document.getElementById("stats");
+  const totalCard = document.createElement("div");
+  totalCard.className = "stat-card";
+  totalCard.innerHTML = `<div class="label">게시물 수</div><div class="value">${DATA.length}</div>`;
+  statsEl.appendChild(totalCard);
+
+  NUMBER_COLS.slice(0, 3).forEach((col) => {
+    const values = DATA.map((r) => r[col]).filter((v) => typeof v === "number");
+    const sum = values.reduce((a, b) => a + b, 0);
+    const avg = values.length ? (sum / values.length).toFixed(1) : 0;
+    const card = document.createElement("div");
+    card.className = "stat-card";
+    card.innerHTML = `<div class="label">${col} 평균</div><div class="value">${avg}</div>`;
+    statsEl.appendChild(card);
+  });
+
+  // ---- 차트 영역 ----
+  const chartsEl = document.getElementById("charts");
+  const palette = ["#6366f1", "#22c55e", "#f97316", "#ef4444", "#06b6d4", "#a855f7"];
+
+  function makeChartBox(title) {
+    const box = document.createElement("div");
+    box.className = "chart-box";
+    const h3 = document.createElement("h3");
+    h3.textContent = title;
+    const canvas = document.createElement("canvas");
+    box.appendChild(h3);
+    box.appendChild(canvas);
+    chartsEl.appendChild(box);
+    return canvas;
+  }
+
+  // 컬럼 이름에 특정 키워드가 포함된 숫자 컬럼을 찾아줍니다.
+  // (정확한 속성명이 조금 달라도 "조회수", "반응", "프로필" 이 들어가면 인식)
+  function findColByKeyword(keyword) {
+    if (DATA.length === 0) return null;
+    return Object.keys(DATA[0]).find(
+      (k) => k.includes(keyword) && NUMBER_COLS.includes(k)
+    );
+  }
+
+  const VIEW_COL = findColByKeyword("조회수");
+  const REACTION_COL = findColByKeyword("반응");
+  const PROFILE_COL = findColByKeyword("프로필");
+
+  // 항목 이름으로 보여줄 컬럼을 찾습니다.
+  // 1순위: 노션 기본 제목(title) 속성에 값이 채워져 있으면 그걸 사용
+  // 2순위: 컬럼 이름에 "제목"/"콘텐츠"/"이름"이 포함된 텍스트 속성 중 값이 채워진 것
+  function pickLabelColumn() {
+    if (DATA.length === 0) return null;
+
+    const isFilled = (col) => {
+      const filledCount = DATA.filter(
+        (r) => r[col] !== null && r[col] !== undefined && r[col].toString().trim() !== ""
+      ).length;
+      return filledCount / DATA.length > 0.5;
+    };
+
+    if (TITLE_COL && isFilled(TITLE_COL)) return TITLE_COL;
+
+    const keywords = ["제목", "콘텐츠", "이름"];
+    for (const kw of keywords) {
+      const candidate = Object.keys(DATA[0])
+        .filter((k) => k !== "id" && k !== TITLE_COL && k.includes(kw))
+        .find((k) => isFilled(k));
+      if (candidate) return candidate;
+    }
+
+    return TITLE_COL || null;
+  }
+
+  const LABEL_COL = pickLabelColumn();
+
+  // 조회수 / 반응 / 프로필 활동 TOP 5 가로 막대 차트
+  function renderTop5(chartTitle, valueCol) {
+    const box = makeChartBox(chartTitle);
+
+    if (!valueCol) {
+      const available = Object.keys(DATA[0] || {})
+        .filter((k) => k !== "id")
+        .join(", ");
+      box.outerHTML = `<div class="empty">"${chartTitle}"에 해당하는 숫자 속성을 찾지 못했어요.<br/>사용 가능한 속성: ${available}</div>`;
+      return;
+    }
+
+    const sorted = [...DATA]
+      .filter((r) => typeof r[valueCol] === "number")
+      .sort((a, b) => b[valueCol] - a[valueCol])
+      .slice(0, 5);
+
+    const labels = sorted.map((r) => {
+      const t = LABEL_COL ? r[LABEL_COL] : "";
+      const text = (t || "(제목 없음)").toString();
+      return text.length > 18 ? text.slice(0, 18) + "…" : text;
+    });
+
+    new Chart(box, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: valueCol,
+            data: sorted.map((r) => r[valueCol]),
+            backgroundColor: "#FFBBE4",
+            borderRadius: 6,
+          },
+        ],
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        layout: { padding: { right: 36 } },
+        plugins: {
+          legend: { display: false },
+          datalabels: {
+            anchor: "end",
+            align: "end",
+            color: "#333",
+            font: { weight: "600", size: 12 },
+            formatter: (value) => value.toLocaleString(),
+          },
+        },
+        scales: { x: { beginAtZero: true } },
+      },
+    });
+  }
+
+  renderTop5("조회수 TOP 5", VIEW_COL);
+  renderTop5("반응 TOP 5", REACTION_COL);
+  renderTop5("프로필 활동 TOP 5", PROFILE_COL);
+</script>
+</body>
+</html>
