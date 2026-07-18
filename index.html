@@ -5,12 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>별별별 콘텐츠 인사이트 대시보드</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <style>
   * { box-sizing: border-box; }
   body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Apple SD Gothic Neo", sans-serif;
-    background: #ffffff;
+    background: #F1FFF3;
     color: #1f1f1f;
     padding: 24px;
   }
@@ -102,10 +103,14 @@
   const DATE_COLS = ["기록일자"];
   const CATEGORY_COLS = ["비워두기"];
   const TITLE_COL = "비워두기";
-  const GENERATED_AT = "2026-07-18T07:41:24.083Z";
+  const GENERATED_AT = "2026-07-18T07:46:10.119Z";
 
   document.getElementById("updatedAt").textContent =
     new Date(GENERATED_AT).toLocaleString("ko-KR");
+
+  if (window.ChartDataLabels) {
+    Chart.register(ChartDataLabels);
+  }
 
   // ---- 요약 카드 ----
   const statsEl = document.getElementById("stats");
@@ -212,7 +217,7 @@
           {
             label: valueCol,
             data: sorted.map((r) => r[valueCol]),
-            backgroundColor: palette[0],
+            backgroundColor: "#FFB7ED",
             borderRadius: 6,
           },
         ],
@@ -220,7 +225,17 @@
       options: {
         indexAxis: "y",
         responsive: true,
-        plugins: { legend: { display: false } },
+        layout: { padding: { right: 36 } },
+        plugins: {
+          legend: { display: false },
+          datalabels: {
+            anchor: "end",
+            align: "end",
+            color: "#333",
+            font: { weight: "600", size: 12 },
+            formatter: (value) => value.toLocaleString(),
+          },
+        },
         scales: { x: { beginAtZero: true } },
       },
     });
