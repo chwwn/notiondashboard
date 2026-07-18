@@ -1,9 +1,9 @@
 name: Update Notion Dashboard
 
 on:
+  workflow_dispatch:
   schedule:
-    # 매시간 정각에 자동 실행 (UTC 기준, 필요하면 주기 조정 가능)
-    - cron: "0 * * * *"
+    - cron: '*/30 * * * *'
   workflow_dispatch: {} # Actions 탭에서 수동 실행 버튼도 사용 가능
 
 permissions:
