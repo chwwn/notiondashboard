@@ -163,34 +163,4 @@ function buildHtml(rows, meta, titleColKey) {
     .replace("__DATA__", JSON.stringify(rows))
     .replace("__NUMBER_COLS__", JSON.stringify(numberCols))
     .replace("__DATE_COLS__", JSON.stringify(dateCols))
-    .replace("__CATEGORY_COLS__", JSON.stringify(categoryCols))
-    .replace("__TITLE_COL__", JSON.stringify(titleColKey || ""))
-    .replace("__GENERATED_AT__", generatedAt);
-
-  return html;
-}
-
-async function main() {
-  console.log("Notion 데이터베이스 조회 중...");
-  const { rows, titleColKey } = await fetchAllRows();
-  console.log(`총 ${rows.length}개 행을 가져왔습니다.`);
-
-  await resolveRelations(rows);
-
-  const meta = classifyColumns(rows);
-  console.log("컬럼 분류:", meta);
-
-  const html = buildHtml(rows, meta, titleColKey);
-
-  const outDir = path.join(__dirname, "..", "public");
-  fs.mkdirSync(outDir, { recursive: true });
-  fs.writeFileSync(path.join(outDir, "index.html"), html, "utf-8");
-  fs.writeFileSync(path.join(outDir, "data.json"), JSON.stringify(rows, null, 2), "utf-8");
-
-  console.log("public/index.html 생성 완료");
-}
-
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+    .replace("__CATEGORY_COLS__",
