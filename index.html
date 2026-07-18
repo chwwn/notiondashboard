@@ -34,7 +34,7 @@
     border: 1px solid #ececec;
     border-radius: 10px;
     padding: 14px 16px;
-    background: #FFFACC;
+    background: #FFBBE4;
   }
   .stat-card .label {
     font-size: 12px;
@@ -103,7 +103,7 @@
   const DATE_COLS = ["기록일자"];
   const CATEGORY_COLS = ["비워두기"];
   const TITLE_COL = "비워두기";
-  const GENERATED_AT = "2026-07-18T07:51:10.744Z";
+  const GENERATED_AT = "2026-07-18T07:53:16.349Z";
 
   document.getElementById("updatedAt").textContent =
     new Date(GENERATED_AT).toLocaleString("ko-KR");
@@ -217,7 +217,7 @@
           {
             label: valueCol,
             data: sorted.map((r) => r[valueCol]),
-            backgroundColor: "#FFBBE4",
+            backgroundColor: "#FFFACC",
             borderRadius: 6,
           },
         ],
