@@ -187,7 +187,7 @@
   const LABEL_COL = pickLabelColumn();
 
   // 조회수 / 반응 / 프로필 활동 TOP 5 가로 막대 차트
-  function renderTop5(chartTitle, valueCol) {
+  function renderTop5(chartTitle, valueCol, rows = DATA, emptyMessage = "") {
     const box = makeChartBox(chartTitle);
 
     if (!valueCol) {
@@ -198,10 +198,15 @@
       return;
     }
 
-    const sorted = [...DATA]
+    const sorted = [...rows]
       .filter((r) => typeof r[valueCol] === "number")
       .sort((a, b) => b[valueCol] - a[valueCol])
       .slice(0, 5);
+
+    if (sorted.length === 0) {
+      box.outerHTML = `<div class="empty">${emptyMessage || "표시할 데이터가 없어요."}</div>`;
+      return;
+    }
 
     const labels = sorted.map((r) => {
       const t = LABEL_COL ? r[LABEL_COL] : "";
@@ -241,7 +246,36 @@
     });
   }
 
+  // 최근 30일 필터에 쓸 날짜 컬럼 찾기
+  // 우선순위: "기록일자" > "일자/날짜/게시일" 포함 컬럼 > 첫 번째 날짜 컬럼
+  function pickDateColumn() {
+    if (DATE_COLS.length === 0) return null;
+    const prefer = ["기록일자", "일자", "날짜", "게시일", "발행일"];
+    for (const kw of prefer) {
+      const found = DATE_COLS.find((c) => c.includes(kw));
+      if (found) return found;
+    }
+    return DATE_COLS[0];
+  }
+
+  const DATE_COL = pickDateColumn();
+  const THIRTY_DAYS_AGO = new Date();
+  THIRTY_DAYS_AGO.setDate(THIRTY_DAYS_AGO.getDate() - 30);
+  THIRTY_DAYS_AGO.setHours(0, 0, 0, 0);
+
+  const recentRows = DATE_COL
+    ? DATA.filter((r) => r[DATE_COL] && new Date(r[DATE_COL]) >= THIRTY_DAYS_AGO)
+    : [];
+
   renderTop5("조회수 TOP 5", VIEW_COL);
+  renderTop5(
+    "최근 30일 조회수 TOP 5",
+    VIEW_COL,
+    recentRows,
+    DATE_COL
+      ? `최근 30일(${DATE_COL} 기준) 안에 기록된 게시물이 없어요.`
+      : "날짜 속성을 찾지 못해 최근 30일 기준으로 보여줄 수 없어요."
+  );
   renderTop5("반응 TOP 5", REACTION_COL);
   renderTop5("프로필 활동 TOP 5", PROFILE_COL);
 </script>

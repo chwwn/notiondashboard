@@ -27,8 +27,6 @@ https://www.notion.so/워크스페이스이름/1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d?
 
 `?` 앞에 있는 32자리 문자열(`1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d`)이 데이터베이스 ID입니다.
 
-3a1525120f0a80be8e44e8cbd7b5a91b
-
 ## 4단계. GitHub 저장소 만들고 코드 올리기
 
 1. GitHub에서 새 저장소 생성 (예: `notion-dashboard`, Public으로)
