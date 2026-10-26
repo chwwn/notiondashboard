@@ -125,7 +125,11 @@
     const avg = values.length ? (sum / values.length).toFixed(1) : 0;
     const card = document.createElement("div");
     card.className = "stat-card";
-    card.innerHTML = `<div class="label">${col} 평균</div><div class="value">${avg}</div>`;
+    if (col.includes("조회수")) {
+      card.innerHTML = `<div class="label">누적 ${col}</div><div class="value">${sum.toLocaleString("ko-KR")}</div>`;
+    } else {
+      card.innerHTML = `<div class="label">${col} 평균</div><div class="value">${avg}</div>`;
+    }
     statsEl.appendChild(card);
   });
 
@@ -267,7 +271,6 @@
     ? DATA.filter((r) => r[DATE_COL] && new Date(r[DATE_COL]) >= THIRTY_DAYS_AGO)
     : [];
 
-  renderTop5("조회수 TOP 5", VIEW_COL);
   renderTop5(
     "최근 30일 조회수 TOP 5",
     VIEW_COL,
